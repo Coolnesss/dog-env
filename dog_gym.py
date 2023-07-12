@@ -3,13 +3,15 @@ import gymnasium as gym
 from gymnasium import spaces
 from client import Client
 import time
+from typing import Callable
 
 class DogEnv(gym.Env):
 
-    def __init__(self, dog_ip: str, action_time=0.01, move_speed=8):
+    def __init__(self, dog_ip: str, reward_fn: Callable[[dict[np.ndarray, int]], float] = None, action_time=0.01, move_speed=8):
         self.action_time = action_time # Time to continue every action for (in s)
         self.dog_ip = dog_ip # (local) IP address of dog
         self.move_speed = move_speed # How fast the dog walks
+        self.reward_fn = reward_fn # User-defined reward function which takes observations as arguments
 
         self.observation_space = spaces.Dict(
             {
@@ -23,11 +25,11 @@ class DogEnv(gym.Env):
 
         self.action_map = [
             self.client.forward,
-            #self.client.backward,
-            #self.client.turn_left,
-            #self.client.turn_right,
-            #self.client.step_left,
-            #self.client.step_right,
+            self.client.backward,
+            self.client.turn_left,
+            self.client.turn_right,
+            self.client.step_left,
+            self.client.step_right,
         ]
 
         self.action_space = spaces.Discrete(len(self.action_map))
@@ -55,36 +57,30 @@ class DogEnv(gym.Env):
         # plus the time it takes to get the image and distance
         time.sleep(self.action_time)
 
-        # Observe next state
+        # Observe next observation
         observation = {
             "image": self.client.get_image(),
             "distance": self.client.get_distance()
         }
         
-        # Compute reward based on state
-        reward = 0 # TODO 
+        # Compute reward based on observation
+        reward = 0 if not self.reward_fn else self.reward_fn(observation)
 
         return observation, reward, False, False, {}
 
 # Basic usage
 # WARNING! Be very careful when executing arbitrary commands on a real robot
 if __name__ == '__main__':
-    env = DogEnv(dog_ip="192.168.86.68")
+    # Example reward, keep object in front at 10cm range
+    reward_fn = lambda obs: -(obs["distance"] - 10)**2
+    env = DogEnv(dog_ip="192.168.86.68", reward_fn=reward_fn)
     obs = env.reset()
     print(obs["distance"])
-    
-    import matplotlib.pyplot as plt
-    #plt.imshow(obs["image"])
-    #plt.show()
     
     # WARNING! Be very careful when executing arbitrary commands on a real robot
     for i in range(10):
         action = 0 # Forward
         obs, reward, terminated, truncated, info = env.step(action)
-        print(obs["distance"])
-
-    print(obs["distance"])
-    #plt.imshow(obs["image"])
-    #plt.show()
+        print(reward)
 
     env.client.turn_off_client()

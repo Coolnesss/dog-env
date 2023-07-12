@@ -58,9 +58,10 @@ class Client:
     
     # Distance to object in front in CM
     def get_distance(self):
-        command = cmd.CMD_SONIC+'\n'
+        command = cmd.SONIC+'\n'
         self.send_data(command)
-        return self.receive_data() 
+        distance = int(self.receive_data().split("CMD_SONIC#")[1])
+        return distance
 
     def send_data(self, data):
         try:
@@ -77,14 +78,32 @@ class Client:
     # -----------------
 
     def relax(self):
-        command = cmd.CMD_RELAX
+        command = cmd.RELAX
         self.send_data(command)
 
     def forward(self):
-        command = f'{cmd.CMD_MOVE_FORWARD}#{self.move_speed}\n'
+        command = f'{cmd.MOVE_FORWARD}#{self.move_speed}\n'
         self.send_data(command)
     
-    # TODO others    
+    def backward(self):
+        command = f'{cmd.MOVE_BACKWARD}#{self.move_speed}\n'
+        self.send_data(command)
+
+    def turn_left(self):
+        command = f'{cmd.TURN_LEFT}#{self.move_speed}\n'
+        self.send_data(command)
+
+    def turn_right(self):
+        command = f'{cmd.TURN_RIGHT}#{self.move_speed}\n'
+        self.send_data(command)    
+
+    def step_left(self):
+        command = f'{cmd.MOVE_LEFT}#{self.move_speed}\n'
+        self.send_data(command)    
+
+    def step_right(self):
+        command = f'{cmd.MOVE_RIGHT}#{self.move_speed}\n'
+        self.send_data(command)
 
 if __name__ == '__main__':
     pass
